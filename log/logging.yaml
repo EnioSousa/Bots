@@ -15,7 +15,7 @@ handlers:
   consoleHandler:
     class: logging.StreamHandler
     formatter: standardFormatter
-    level: DEBUG
+    level: INFO
 
   fileHandler:
     class: logging.handlers.RotatingFileHandler
@@ -24,6 +24,8 @@ handlers:
     level: DEBUG
     maxBytes: 5242880
     backupCount: 3
+    encoding: utf8
+    mode: a
 
 loggers:
   stdoutLogger:

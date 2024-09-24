@@ -1,4 +1,3 @@
-from pynput.keyboard._base import Key as Key
 from mouse.mouse_recorder import MouseRecorder
 from mouse.mouse_controller import MouseController
 from keyboard.keyboard_recorder import KeyboardRecorder
@@ -8,17 +7,6 @@ from log.log import setup_logging
 
 from pynput import keyboard
 import logging
-import sys
-
-ser: Serialize = None
-mouseRec: MouseRecorder = None
-mouseCtr: MouseController = None
-memMonitor: MemoryMonitor = None
-keyboardRec: KeyboardRecorder = None
-
-import logging
-from pynput import keyboard
-from pynput.keyboard import Key, KeyCode
 
 class MainThread(KeyboardRecorder):
     """
@@ -44,7 +32,7 @@ class MainThread(KeyboardRecorder):
             "  - 'Esc' or 'q': Quit the program\n"
         )
 
-    def on_press(self, key: Key):
+    def on_press(self, key: keyboard.Key):
         if key == keyboard.KeyCode(char='s'):
             self.__logger.info("Start selected")
             self.memMonitor.start()
@@ -85,3 +73,4 @@ if __name__ == "__main__":
     setup_logging()
     logging.info("Start run")
     main()
+    logging.shutdown()
