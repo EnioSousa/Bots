@@ -11,7 +11,7 @@ def setup_logging():
         if 'filename' in handler:
             log_file_path = handler['filename']
             if os.path.exists(log_file_path):
-                os.remove(log_file_path)
+                #os.remove(log_file_path)
                 print(f"Deleted existing logging file: {log_file_path}")
 
     logging.config.dictConfig(config)

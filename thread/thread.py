@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from time import sleep
 from enum import Enum
 import threading
 import logging
@@ -55,9 +56,6 @@ class Runnable(ABC):
             self.__thread.join()
 
         self.__thread = None
-
-    def wait_time(self, time: int):
-        threading.Event().wait(time)
 
     @abstractmethod
     def _run(self):

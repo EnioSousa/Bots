@@ -4,8 +4,8 @@ from ser.ser import Serialize
 
 from pynput import mouse
 from pynput.mouse import Button
-from enum import Enum
 from threading import Lock
+from datetime import datetime
 
 import logging
 
@@ -28,6 +28,7 @@ class MouseRecorder(Runnable):
 
         self.__eventLock: Lock = Lock()
         self.__events: list[MouseEvent] = []
+        self.__record_start: datetime = datetime.now()
 
         self.__ser: Serialize = Serialize("mouse_events.pkl") if ser is None else ser
 
@@ -63,7 +64,7 @@ class MouseRecorder(Runnable):
 
         with self._condition:
             while self._state == Runnable.State.RUNNING:
-                self._condition.wait(timeout=10)
+                self._condition.wait(timeout=60)
 
                 with self.__eventLock:
                     self.__ser.schedule_serialization(self.__events)
@@ -96,8 +97,10 @@ class MouseRecorder(Runnable):
             y (int): The y-coordinate of the mouse pointer.
         """
         with self.__eventLock:
-            self.__logger.debug('Pointer moved to {0}'.format((x,y)))
-            self.__events.append(MouseEvent(MouseEvent.EventType.MOVE))
+            event = MouseEvent(MouseEvent.EventType.MOVE, x, y, datetime.now() - self.__record_start)
+            self.__events.append(event)
+
+        self.__logger.debug(event)
 
     def on_click(self, x, y, button, pressed):
         """
@@ -117,9 +120,10 @@ class MouseRecorder(Runnable):
             else:
                 return
 
-            self.__events.append(MouseEvent(event_type))
+            event = MouseEvent(event_type, x, y, datetime.now() - self.__record_start)
+            self.__events.append(event)
 
-        self.__logger.debug('{0} {1} at {2}'.format('Left' if button == Button.left else 'Right', 'Pressed' if pressed else 'Released', (x,y)))
+        self.__logger.debug(event)
 
     def on_scroll(self, x, y, dx, dy):
         """
@@ -131,4 +135,4 @@ class MouseRecorder(Runnable):
             dx (int): The amount of horizontal scroll.
             dy (int): The amount of vertical scroll.
         """
-        self.__logger.debug('Scolled {0} at {1}'.format('Down' if dy < 0 else 'Up', (x, y)))
+        self.__logger.debug("Scroll event ignored")

@@ -2,6 +2,7 @@ from thread.thread import Runnable
 
 import pickle
 import logging
+import os
 
 class Serialize(Runnable):
     """
@@ -55,8 +56,16 @@ class Serialize(Runnable):
 
         self.__logger.debug("Attempting serialization")
 
-        with open(self.__file, 'wb') as file:
-            pickle.dump(events, file)
+        existing_events = []
+        if os.path.exists(self.__file):
+            with open(self.__file, "rb") as file:
+                try:
+                    existing_events = pickle.load(file)
+                except EOFError:
+                    self.__logger.warning("The file is empty")
+
+        with open(self.__file, "wb") as file:
+            pickle.dump(existing_events + events, file)
 
     def deserialize(self):
         """
@@ -80,7 +89,7 @@ class Serialize(Runnable):
 
         with self._condition:
             while self._state == Runnable.State.RUNNING:
-                if not self.__list:
+                if self.__list == []:
                     self._condition.wait_for(lambda: self._state == Runnable.State.STOPPED or self.__list)
 
                 if self.__list:

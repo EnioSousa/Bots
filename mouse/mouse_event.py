@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import timedelta
 from enum import Enum
 
 class MouseEvent:
@@ -30,9 +30,16 @@ class MouseEvent:
         RELEASED_LEFT = 3
         RELEASED_RIGHT = 4
 
-    def __init__(self, event_type: EventType, timestamp: datetime = None):
-        self.event_type = event_type
-        self.timestamp = timestamp if timestamp else datetime.now()
+    _id_counter = 0
+
+    def __init__(self, event_type: EventType, x: int, y: int, elapsed_time: timedelta):
+        self.event_type: MouseEvent.EventType = event_type
+        self.timestamp: int = int(elapsed_time.total_seconds() * 1_000)
+        self.x: int = x
+        self.y: int = y
+        self.id: int = MouseEvent._id_counter
+        MouseEvent._id_counter += 1
+
 
     def __repr__(self) -> str:
-        return (f"MouseEvent(Timestamp={self.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')}, event_type={self.event_type.name})")
+        return (f"MouseEvent(ID={self.id}, Timestamp={self.timestamp}, event_type={self.event_type.name}, x={self.x}, y={self.y})")
