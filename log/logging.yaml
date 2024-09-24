@@ -15,7 +15,7 @@ handlers:
   consoleHandler:
     class: logging.StreamHandler
     formatter: standardFormatter
-    level: INFO
+    level: DEBUG
 
   fileHandler:
     class: logging.handlers.RotatingFileHandler

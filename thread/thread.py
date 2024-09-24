@@ -55,7 +55,17 @@ class Runnable(ABC):
         if self.__thread is not None and self.__thread.is_alive():
             self.__thread.join()
 
-        self.__thread = None
+        with self._condition:
+            self.__thread = None
+            self._condition.notify_all()
+
+    def wait_for_end(self):
+        """
+        Wait for the end of the thread if already started
+        """
+        with self._condition:
+            if self._state == Runnable.State.RUNNING:
+                self._condition.wait_for(lambda: self.__thread is None)
 
     @abstractmethod
     def _run(self):
