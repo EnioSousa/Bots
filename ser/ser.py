@@ -86,6 +86,7 @@ class Serialize(Runnable):
         This method runs continuously while the state is RUNNING.
         """
         self.__logger.info("Serialization thread started")
+        self.__reset()
 
         with self._condition:
             while self._state == Runnable.State.RUNNING:
@@ -97,3 +98,16 @@ class Serialize(Runnable):
                     self.__list.clear()
 
         self.__logger.info("Serialization thread finished")
+
+    def __reset(self):
+        """ Reset current serialization on the file """
+        with self._condition:
+            if os.path.exists(self.__file):
+                os.remove(self.__file)
+                self.__logger.info("Serialization file removed")
+            else:
+                self.__logger.info("No serialization file to remove")
+
+            self.__list = []
+            self._condition.notify_all()
+

@@ -62,6 +62,8 @@ class MouseRecorder(Runnable):
         self.__ser.start()
         self.__start_listener()
 
+        self.__record_start = datetime.now()
+
         with self._condition:
             while self._state == Runnable.State.RUNNING:
                 self._condition.wait(timeout=60)

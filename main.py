@@ -12,7 +12,6 @@ class MainThread(KeyboardRecorder):
     """
     Main thread based on keyboard monitoring system.
     """
-
     def __init__(self, memMonitor: MemoryMonitor, mouseRec: MouseRecorder, mouseCtrl: MouseController):
         super().__init__()
         self.__logger = logging.getLogger("root")

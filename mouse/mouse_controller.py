@@ -14,6 +14,11 @@ class MouseController(Runnable):
         self.__controller = Controller()
         self.__logger = logging.getLogger("mouse.MouseController")
         self.__start_time: datetime
+        self.__mouse_button: Dict[Button, bool] = {
+            Button.left: False,
+            Button.right: False,
+            Button.middle: False
+        }
 
     def _parse_event(self, event: MouseEvent):
         self.__logger.debug("Current position {0}".format(self.__controller.position))
@@ -48,10 +53,11 @@ class MouseController(Runnable):
         with self._condition:
             while self._state == Runnable.State.RUNNING:
                 events = self.__ser.deserialize()
-                start_time: int = int(datetime.now().timestamp() * 1_000)
+
+                start_time: int = datetime.now().timestamp() * 1_000
 
                 for event in events:
-                    wait_time = max(0, event.timestamp - (int(datetime.now().timestamp() * 1_000) - start_time)) / 1_000
+                    wait_time = max(0, event.timestamp + start_time - int(datetime.now().timestamp() * 1_000)) / 1_000
                     self.__logger.debug(f"For next event {event}, Waiting {wait_time} seconds")
 
                     self._condition.wait(timeout=wait_time)
@@ -64,7 +70,7 @@ class MouseController(Runnable):
                 if self._state == Runnable.State.RUNNING:
                     timeout_between_runs: int = 5
                     self.__logger.info(f"Sleeping for {timeout_between_runs} seconds")
-                    self._condition.wait_for(lambda: self._state == Runnable.State.STOPPED, timeout=wait_time)
+                    self._condition.wait_for(lambda: self._state == Runnable.State.STOPPED, timeout=timeout_between_runs)
 
         self.__logger.info("Mouse controller stopped")
 
