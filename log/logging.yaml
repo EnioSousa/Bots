@@ -1,0 +1,41 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  standardFormatter:
+    format: "%(levelname)s:%(asctime)s:%(name)s: %(message)s"
+    datefmt: '%Y-%m-%d %H.%M.%S'
+
+  preciseFormatter:
+    format: "%(levelname)s:%(asctime)s.%(msecs)03d:%(funcName)s:%(lineno)d:%(name)s: %(message)s"
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+
+handlers:
+  consoleHandler:
+    class: logging.StreamHandler
+    formatter: standardFormatter
+    level: INFO
+
+  fileHandler:
+    class: logging.handlers.RotatingFileHandler
+    formatter: preciseFormatter
+    filename: log.log
+    level: DEBUG
+    maxBytes: 5242880
+    backupCount: 3
+    encoding: utf8
+    mode: a
+
+loggers:
+  stdoutLogger:
+    handlers: [consoleHandler]
+    propagate: no
+
+  fileLogger:
+    handlers: [fileHandler]
+    propagate: no
+
+root:
+  level: DEBUG
+  handlers: [consoleHandler, fileHandler]
