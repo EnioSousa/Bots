@@ -52,7 +52,11 @@ class MouseController(Runnable):
 
         with self._condition:
             while self._state == Runnable.State.RUNNING:
-                events = self.__ser.deserialize()
+                try:
+                    events = self.__ser.deserialize()
+                except Exception as e:
+                    self.__logger.error(f"Exception caught: {e}")
+                    return
 
                 start_time: int = datetime.now().timestamp() * 1_000
 
