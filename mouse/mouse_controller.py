@@ -4,23 +4,48 @@ from ser.ser import Serialize
 from datetime import datetime
 
 from pynput.mouse import Button, Controller
+import threading
 import logging
-import time
 
 class MouseController(Runnable):
-    def __init__(self, ser: Serialize):
+    def __init__(self, ser: Serialize, timeout: int):
         super().__init__()
         self.__ser = ser
+        self._timeout = timeout
+        self._speed = 1
+        self._speed_lock = threading.Lock()
         self.__controller = Controller()
         self.__logger = logging.getLogger("mouse.MouseController")
-        self.__start_time: datetime
-        self.__mouse_button: Dict[Button, bool] = {
-            Button.left: False,
-            Button.right: False,
-            Button.middle: False
-        }
+
+    def update_speed(self, delta: float) -> bool:
+        """
+        Update the mouse speed by a dealta
+        """
+        with self._speed_lock:
+            if self._speed + delta > 0:
+                self._speed = self._speed + delta
+                self.__logger.info(f"New speed set at x{self._speed}")
+                return True
+            else:
+                self.__logger.error(f"Failed to update speed because the value would be negative")
+                return False
 
     def _parse_event(self, event: MouseEvent):
+        """
+        Parse mouse event
+
+        Args:
+            event: The mouse event
+        """
+        self.__parse_event_direct(event)
+
+    def __parse_event_direct(self, event: MouseEvent):
+        """
+        Parse Mouse events with the intention to directly control the mouse
+
+        Args:
+            event: The mouse event
+        """
         self.__logger.debug("Current position {0}".format(self.__controller.position))
 
         if event.event_type == MouseEvent.EventType.MOVE:
@@ -61,8 +86,10 @@ class MouseController(Runnable):
                 start_time: int = datetime.now().timestamp() * 1_000
 
                 for event in events:
-                    wait_time = max(0, event.timestamp + start_time - int(datetime.now().timestamp() * 1_000)) / 1_000
-                    self.__logger.debug(f"For next event {event}, Waiting {wait_time} seconds")
+                    with self._speed_lock:
+                        scaled_time = event.timestamp / self._speed
+                    wait_time = max(0, scaled_time + start_time - int(datetime.now().timestamp() * 1_000)) / 1_000 / self._speed
+                    self.__logger.debug(f"For next event {event}, Waiting {wait_time} seconds (speed=x{self._speed}")
 
                     self._condition.wait(timeout=wait_time)
 
@@ -72,7 +99,7 @@ class MouseController(Runnable):
                         break
 
                 if self._state == Runnable.State.RUNNING:
-                    timeout_between_runs: int = 5
+                    timeout_between_runs: int = 0
                     self.__logger.info(f"Sleeping for {timeout_between_runs} seconds")
                     self._condition.wait_for(lambda: self._state == Runnable.State.STOPPED, timeout=timeout_between_runs)
 
