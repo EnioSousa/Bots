@@ -1,5 +1,5 @@
 from mouse.mouse_event import MouseEvent
-from thread.thread import Runnable
+from utils.thread.thread import Runnable
 from ser.ser import Serialize
 
 from pynput import mouse
@@ -30,7 +30,7 @@ class MouseRecorder(Runnable):
         self.__events: list[MouseEvent] = []
         self.__record_start: datetime = datetime.now()
 
-        self.__ser: Serialize = Serialize("mouse_events.pkl") if ser is None else ser
+        self.__ser: Serialize = ser
 
         self.__logger = logging.getLogger("mouse.MouseRecorder")
 
@@ -59,7 +59,8 @@ class MouseRecorder(Runnable):
         The main loop for the mouse recorder. This runs continuously while the state is RUNNING.
         """
         self.__logger.info("Mouse Recorder started")
-        self.__ser.start()
+        if self.__ser is not None:
+            self.__ser.start()
         self.__start_listener()
 
         self.__record_start = datetime.now()
@@ -69,11 +70,13 @@ class MouseRecorder(Runnable):
                 self._condition.wait(timeout=60)
 
                 with self.__eventLock:
-                    self.__ser.schedule_serialization(self.__events)
+                    if self.__ser is not None:
+                        self.__ser.schedule_serialization(self.__events)
                     self.__events.clear()
 
         self.__stop_listener()
-        self.__ser.stop()
+        if self.__ser is not None:
+            self.__ser.stop()
 
         with self.__eventLock:
             self.__events = []
@@ -98,8 +101,8 @@ class MouseRecorder(Runnable):
             x (int): The x-coordinate of the mouse pointer.
             y (int): The y-coordinate of the mouse pointer.
         """
+        event = MouseEvent(MouseEvent.EventType.MOVE, x, y, datetime.now() - self.__record_start)
         with self.__eventLock:
-            event = MouseEvent(MouseEvent.EventType.MOVE, x, y, datetime.now() - self.__record_start)
             self.__events.append(event)
 
         self.__logger.debug(event)
