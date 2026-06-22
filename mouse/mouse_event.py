@@ -1,9 +1,8 @@
-from datetime import timedelta
 from enum import Enum
 
-from utils.atomic.atomic import AtomicCounter
+from inputDevice.input_event import InputPayload, InputSource
 
-class MouseEvent:
+class MouseEvent(InputPayload):
     """
     Represents a mouse event with an associated type and timestamp.
 
@@ -32,15 +31,14 @@ class MouseEvent:
         RELEASED_LEFT = 3
         RELEASED_RIGHT = 4
 
-    _id_counter: AtomicCounter = AtomicCounter()
+    def getSourceType(self) -> InputSource:
+        return InputSource.MOUSE
 
-    def __init__(self, event_type: EventType, x: int, y: int, elapsed_time: timedelta):
+    def __init__(self, event_type: EventType, x: int, y: int):
         self.event_type: MouseEvent.EventType = event_type
-        self.timestamp: int = int(elapsed_time.total_seconds() * 1_000)
         self.x: int = x
         self.y: int = y
-        self.id: int = MouseEvent._id_counter.increment()
 
 
     def __repr__(self) -> str:
-        return (f"MouseEvent(ID={self.id}, Timestamp={self.timestamp}, event_type={self.event_type.name}, x={self.x}, y={self.y})")
+        return (f"MouseEvent(event_type={self.event_type.name}, x={self.x}, y={self.y})")

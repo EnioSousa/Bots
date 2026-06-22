@@ -1,11 +1,9 @@
-from datetime import timedelta
 from pynput import keyboard
 from enum import Enum
-from utils.atomic.atomic import AtomicCounter
 
-import logging
+from inputDevice.input_event import InputPayload, InputSource
 
-class KeyboardEvent:
+class KeyboardEvent(InputPayload):
     """
     Represents a keyboard event with an associated type, timestamp and Keys
 
@@ -29,13 +27,12 @@ class KeyboardEvent:
         PRESSED = 0
         RELEASED = 1
 
-    _id_counter: AtomicCounter = AtomicCounter()
-
-    def __init__(self, event_type: EventType, key: keyboard.Key, elapsed_time: timedelta):
+    def getSourceType(self) -> InputSource:
+        return InputSource.KEYBOARD
+    
+    def __init__(self, event_type: EventType, key: keyboard.Key):
         self.event_type: KeyboardEvent.EventType = event_type
-        self.timestamp: int = int(elapsed_time.total_seconds() * 1_000)
         self.key: str = self.__serialize_key(key)
-        self.id: int = KeyboardEvent._id_counter.increment()
 
     def __serialize_key(self, key: keyboard.Key):
         if isinstance(key, keyboard.KeyCode):
@@ -54,5 +51,5 @@ class KeyboardEvent:
                 raise ValueError(f"Unkown key name '{value}'")
 
     def __repr__(self) -> str:
-        return (f"KeyboardEvent(ID={self.id}, Timestamp={self.timestamp}, event_type={self.event_type.name}, KeyValue={self.key})")
+        return (f"KeyboardEvent(Ievent_type={self.event_type.name}, KeyValue={self.key})")
         

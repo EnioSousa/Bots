@@ -3,6 +3,13 @@ from abc import ABC, abstractmethod
 
 from utils.atomic.atomic import AtomicCounter
 
+class InputSource(Enum):
+    """
+    Enum to describe the source
+    """
+    MOUSE       = 0
+    KEYBOARD    = 1
+
 class InputPayload(ABC):
     """
     Abstracts interface for any device-specific event payload (e.g MouseEvent, KeyboardEvent).
@@ -10,6 +17,10 @@ class InputPayload(ABC):
 
     @abstractmethod
     def __repr__(self) -> str:
+        raise NotImplemented
+    
+    @abstractmethod
+    def getSourceType(self) -> InputSource:
         raise NotImplemented
     
 class InputEvent:
@@ -24,20 +35,14 @@ class InputEvent:
                          shared across all InputEvents regardless of source.
         id (int): Unique, monotonically increasing identifier for this event.
     """
-
-    class Source(Enum):
-        MOUSE       = 0
-        KEYBOARD    = 1
-
     _id_counter: AtomicCounter = AtomicCounter()
 
-    def __init__(self, source: Source, payload: InputPayload, timestamp: int):
-        self.source: InputEvent.Source = source
+    def __init__(self, payload: InputPayload, timestamp: int):
         self.payload: InputPayload = payload
         self.timestamp: int = timestamp
         self.id: int = InputEvent._id_counter.increment()
 
     def __repr__(self) -> str:
-        return (f"InputEvent(ID={self.id}, Timestamp={self.timestamp}, "source={self.source.name}, payload={self.payload})")
+        return (f"InputEvent(ID={self.id}, Timestamp={self.timestamp}, payload={self.payload})")
     
 

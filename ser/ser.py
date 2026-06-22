@@ -41,6 +41,8 @@ class Serialize(Runnable):
                 self._condition.notify_all()
 
             self.__logger.info("Serialization scheduled")
+        else:
+            self.__logger.info("List is empty")
 
     def _unsafe_serialize(self, events):
         """

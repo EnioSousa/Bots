@@ -1,16 +1,24 @@
-from mouse.mouse_event import MouseEvent
-from utils.controller.inputController import InputController
-from ser.ser import Serialize
-
 from pynput.mouse import Button, Controller
 import logging
 
-class MouseController(InputController):
-    def __init__(self, ser: Serialize, timeout: int):
-        super().__init__(ser=ser, timeout=timeout, logger_name="mouse.MouseController")
+from inputDevice.input_event import InputPayload, InputSource
+from mouse.mouse_event import MouseEvent
+from outputDevice.output_handler import OutputHandler
+
+class MouseController(OutputHandler):
+    def __init__(self):
         self.__controller: Controller = Controller()
         self.__logger = logging.getLogger("mouse.MouseController")
 
+    def get_supported_sources(self) -> set[InputSource]:
+        return {InputSource.MOUSE}
+
+    def handle_event(self, event: InputPayload):
+        if event.getSourceType() != InputSource.MOUSE:
+            self.__logger.error(f"Mouse controller cannot handle event: {event}")
+            return
+
+        self._parse_event(event)
 
     def _parse_event(self, event: MouseEvent):
         """
