@@ -35,3 +35,8 @@ Three keyboard shortcuts are reserved globally (they work even when the GUI isn'
 
 - Reserved keys (`F10`–`F12`) are filtered out at the recording level, so they'll never accidentally end up baked into a replayed script.
 - The emergency stop (`F12`) is intentionally abrupt, it terminates the process at the OS level rather than attempting a graceful shutdown, to guarantee it can't hang or be blocked.
+
+# Dev Note
+To create executable do:
+- ```python -m PyInstaller --onefile --name bot-console --add-data "log/logging.yaml;log" console.py```
+- ```python -m PyInstaller --onefile --name bot-console --add-data "log/logging.yaml;log" gui.py```

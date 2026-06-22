@@ -123,7 +123,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--timeout",
         type=int,
-        default=5,
+        default=1,
         help="Timeout between script runs."
     )
     return parser, parser.parse_args()
