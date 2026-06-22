@@ -14,6 +14,8 @@ class KeyboardRecorder(InputSource):
     This class is not concurently safe, and start/stop methods should be handled carefully
     """
 
+    RESERVED_KEYS = {keyboard.Key.f10, keyboard.Key.f11, keyboard.Key.f12}
+
     def __init__(self):
         """
         Initalize the keyboardRecorder
@@ -54,12 +56,16 @@ class KeyboardRecorder(InputSource):
         """
         Handle key press events
         """
+        if key in self.RESERVED_KEYS:
+            return
         self._on_event(key, KeyboardEvent.EventType.PRESSED)
 
     def on_release(self, key: keyboard.Key):
         """
         Handle key release events
         """
+        if key in self.RESERVED_KEYS:
+            return
         self._on_event(key, KeyboardEvent.EventType.RELEASED)
     
     def _on_event(self, key: keyboard.Key, eventType: KeyboardEvent.EventType):
