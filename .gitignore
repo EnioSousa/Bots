@@ -1,3 +1,6 @@
 *__pycache__*
 *.log*
 *.pkl
+*dist*
+*build*
+*.spec*

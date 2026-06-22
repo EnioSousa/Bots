@@ -1,50 +1,46 @@
-from mouse.mouse_event import MouseEvent
-from thread.thread import Runnable
-from ser.ser import Serialize
-
+from typing import Callable
 from pynput import mouse
-from pynput.mouse import Button
-from threading import Lock
-from datetime import datetime
-
 import logging
 
-class MouseRecorder(Runnable):
-    """
-    A class to record mouse events and serialize them.
+from inputDevice.input_event import InputPayload
+from inputDevice.input_source import InputSource
+from mouse.mouse_event import MouseEvent
 
-    Inherits from Runnable to manage threading behavior.
+class MouseRecorder(InputSource):
+    """
+    Concrete InputSource implementation that captures mouse events via
+    pynput and forwards them to a registered callback as MouseEvent payloads.
+
+    
+    This class is not concurently safe, and start/stop methods should be handled carefully
     """
 
-    def __init__(self, ser: Serialize = None):
+    def __init__(self):
         """
         Initialize the MouseRecorder.
-
-        Args:
-            ser (Serialize): An optional Serialize instance for handling serialization.
         """
-        super().__init__()
+        self.__callback: Callable[[InputPayload], None] = None
         self.__listener: mouse.Listener = None
-
-        self.__eventLock: Lock = Lock()
-        self.__events: list[MouseEvent] = []
-        self.__record_start: datetime = datetime.now()
-
-        self.__ser: Serialize = Serialize("mouse_events.pkl") if ser is None else ser
-
         self.__logger = logging.getLogger("mouse.MouseRecorder")
 
-    def __start_listener(self):
+    def register_callback(self, callback: Callable[[InputPayload], None]) -> None:
+        """
+        Register Event callback
+        """
+        self.__callback = callback
+        self.__logger.info("Callback registered")
+
+    def start(self):
         """
         Start the mouse listener if it is not already running.
         """
         if not self.__listener:
-            self.__listener = mouse.Listener(on_move=self.on_move, on_click=self.on_click, on_scroll=self.on_scroll)
+            self.__listener = mouse.Listener(on_move=self._on_move, on_click=self._on_click, on_scroll=self._on_scroll)
 
         self.__listener.start()
         self.__logger.info("Listener started")
 
-    def __stop_listener(self):
+    def stop(self):
         """
         Stop the mouse listener if it is currently running.
         """
@@ -54,43 +50,16 @@ class MouseRecorder(Runnable):
         self.__listener = None
         self.__logger.info("Listener stopped")
 
-    def _run(self):
+    def __on_event(self, event: MouseEvent):
         """
-        The main loop for the mouse recorder. This runs continuously while the state is RUNNING.
+        Handle Generic Events
         """
-        self.__logger.info("Mouse Recorder started")
-        self.__ser.start()
-        self.__start_listener()
+        if self.__callback is not None:
+            self.__callback(event)
+        
+        self.__logger.debug(event)
 
-        self.__record_start = datetime.now()
-
-        with self._condition:
-            while self._state == Runnable.State.RUNNING:
-                self._condition.wait(timeout=60)
-
-                with self.__eventLock:
-                    self.__ser.schedule_serialization(self.__events)
-                    self.__events.clear()
-
-        self.__stop_listener()
-        self.__ser.stop()
-
-        with self.__eventLock:
-            self.__events = []
-
-        self.__logger.info("Mouse Recorder stopped")
-
-    def get_events(self) -> list[MouseEvent]:
-        """
-        Get the list of recorded mouse events.
-
-        Returns:
-            list[MouseEvent]: The list of recorded mouse events.
-        """
-        with self.__eventLock:
-            return self.__events
-
-    def on_move(self, x, y):
+    def _on_move(self, x, y):
         """
         Handle mouse movement events.
 
@@ -98,13 +67,9 @@ class MouseRecorder(Runnable):
             x (int): The x-coordinate of the mouse pointer.
             y (int): The y-coordinate of the mouse pointer.
         """
-        with self.__eventLock:
-            event = MouseEvent(MouseEvent.EventType.MOVE, x, y, datetime.now() - self.__record_start)
-            self.__events.append(event)
+        self.__on_event(MouseEvent(MouseEvent.EventType.MOVE, x, y))
 
-        self.__logger.debug(event)
-
-    def on_click(self, x, y, button, pressed):
+    def _on_click(self, x, y, button, pressed):
         """
         Handle mouse click events.
 
@@ -114,20 +79,16 @@ class MouseRecorder(Runnable):
             button (Button): The button that was pressed or released.
             pressed (bool): True if the button was pressed, False if released.
         """
-        with self.__eventLock:
-            if button == Button.left:
-                event_type = MouseEvent.EventType.PRESSED_LEFT if pressed else MouseEvent.EventType.RELEASED_LEFT
-            elif button == Button.right:
-                event_type = MouseEvent.EventType.PRESSED_RIGHT if pressed else MouseEvent.EventType.RELEASED_RIGHT
-            else:
-                return
+        if button == mouse.Button.left:
+            event_type = MouseEvent.EventType.PRESSED_LEFT if pressed else MouseEvent.EventType.RELEASED_LEFT
+        elif button == mouse.Button.right:
+            event_type = MouseEvent.EventType.PRESSED_RIGHT if pressed else MouseEvent.EventType.RELEASED_RIGHT
+        else:
+            return
 
-            event = MouseEvent(event_type, x, y, datetime.now() - self.__record_start)
-            self.__events.append(event)
+        self.__on_event(MouseEvent(event_type, x, y))
 
-        self.__logger.debug(event)
-
-    def on_scroll(self, x, y, dx, dy):
+    def _on_scroll(self, x, y, dx, dy):
         """
         Handle mouse scroll events.
 

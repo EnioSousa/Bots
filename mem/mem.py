@@ -1,4 +1,4 @@
-from thread.thread import Runnable
+from utils.thread.thread import Runnable
 
 import psutil
 from enum import Enum
